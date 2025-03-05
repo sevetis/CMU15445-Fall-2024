@@ -31,6 +31,8 @@
 /** @brief Total bucket size. */
 #define TOTAL_BUCKET_SIZE (DENSE_BUCKET_SIZE + OVERFLOW_BUCKET_SIZE)
 
+#define BITSET_CAPACITY 64
+
 namespace bustub {
 
 template <typename KeyType>
@@ -92,6 +94,7 @@ class HyperLogLogPresto {
   uint64_t cardinality_;
 
   // TODO(student) - can add more data structures as required
+  uint64_t leading_bits_;
 };
 
 }  // namespace bustub

@@ -70,9 +70,11 @@ class HyperLogLog {
   auto PositionOfLeftmostOne(const std::bitset<BITSET_CAPACITY> &bset) const -> uint64_t;
 
   /** @brief Cardinality value. */
-  size_t cardinality_;
+  size_t cardinality_{};
 
   /** @todo (student) can add their data structures that support HyperLogLog */
+  uint64_t bit_num_;
+  std::vector<uint8_t> registers_{};
 };
 
 }  // namespace bustub
