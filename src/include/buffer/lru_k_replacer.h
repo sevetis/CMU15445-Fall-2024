@@ -13,10 +13,11 @@
 #pragma once
 
 #include <limits>
-#include <list>
+#include <deque>
 #include <mutex>  // NOLINT
 #include <optional>
-#include <unordered_map>
+#include <map>
+#include <memory>
 #include <vector>
 
 #include "common/config.h"
@@ -27,14 +28,36 @@ namespace bustub {
 enum class AccessType { Unknown = 0, Lookup, Scan, Index };
 
 class LRUKNode {
+ public:
+  explicit LRUKNode(size_t k, frame_id_t frame_id);
+
+  void set_evictable(bool set_evictable) { is_evictable_ = set_evictable; }
+  void access(size_t timestamp, AccessType access_type);
+  size_t distance() const;
+
+  size_t fid() const { return fid_;  }
+  bool evictable() const { return is_evictable_; };
+  size_t last_access() const { return history_.empty() ? inf : history_.back(); }
+
+  void clear();
+  bool operator == (frame_id_t fid) const { return fid_ == fid; }
+  bool operator < (const LRUKNode& other) const;
+
  private:
   /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
   // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
+  std::deque<size_t> history_{};
+  size_t k_;
+  frame_id_t fid_;
+  bool is_evictable_{false};
 
-  [[maybe_unused]] std::list<size_t> history_;
-  [[maybe_unused]] size_t k_;
-  [[maybe_unused]] frame_id_t fid_;
-  [[maybe_unused]] bool is_evictable_{false};
+  static constexpr size_t inf{SIZE_MAX};
+};
+
+struct LRUKNodePtrComparator {
+    bool operator()(const std::shared_ptr<LRUKNode>& lhs, const std::shared_ptr<LRUKNode>& rhs) const {
+        return *lhs < *rhs;
+    }
 };
 
 /**
@@ -74,12 +97,19 @@ class LRUKReplacer {
  private:
   // TODO(student): implement me! You can replace these member variables as you like.
   // Remove maybe_unused if you start using them.
-  [[maybe_unused]] std::unordered_map<frame_id_t, LRUKNode> node_store_;
-  [[maybe_unused]] size_t current_timestamp_{0};
-  [[maybe_unused]] size_t curr_size_{0};
-  [[maybe_unused]] size_t replacer_size_;
-  [[maybe_unused]] size_t k_;
-  [[maybe_unused]] std::mutex latch_;
+  void check_frame_id_(frame_id_t frame_id) const;
+
+  void tick_();
+
+  std::map<std::shared_ptr<LRUKNode>, frame_id_t, LRUKNodePtrComparator> node_store_;
+  std::vector<std::shared_ptr<LRUKNode>> nodes_;
+
+  size_t current_timestamp_{0};
+  size_t k_;
+  size_t replacer_size_;
+  std::mutex latch_{};
+
+  size_t evictable_frames_{};
 };
 
 }  // namespace bustub
